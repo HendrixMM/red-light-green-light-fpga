@@ -1,0 +1,23 @@
+# Vivado generated files
+*.jou
+*.log
+*.wdb
+*.pb
+*.xpr
+.Xil/
+*.cache/
+*.runs/
+*.hw/
+*.sim/
+
+# ModelSim generated files
+work/
+transcript
+vsim.wlf
+
+# Archive and OS metadata
+__MACOSX/
+.DS_Store
+
+# Hold the report until manual redaction is confirmed.
+docs/report.pdf
