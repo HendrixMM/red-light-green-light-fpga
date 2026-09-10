@@ -10,6 +10,8 @@ Hardware demo on Nexys A7-100T: [docs/demo.mp4](docs/demo.mp4)
 
 The video covers the main hardware cases: a normal round, Red Light elimination, timeout after ten iterations, all players eliminated, and a winning player.
 
+I built this for COEN 313. The part that caught me out was simulation speed, not the hardware. `ms_prescaler` divides the 100 MHz clock down to a 1 ms tick by counting to 99,999, so one 6 second Green Light is 600 million clock cycles and the ten-iteration scenario alone is over two billion. That was slow enough that I stopped running the full testbench. The `SIM_FAST` generic swaps the terminal count to 9, so the same design runs 10,000 times faster in ModelSim and a 6 second iteration finishes in 600 us of simulated time. The other change the testbench forced was `ENABLE_RANDOM`: the LFSR offset in `iter_timer` varies each Green Light duration, which is fine on the board but means the assertions cannot count exact ticks, so the testbench turns it off and the timer loads the nominal ROM durations.
+
 **Architecture**
 
 `input_sync` cleans up the board inputs. `ms_prescaler` generates `ms_tick`. `game_fsm` moves through IDLE, LOAD, GREEN, and GAME_OVER. `iter_timer` loads the current Green Light duration and counts it down. Four generated `player_module` instances track distance and player state. `display_ctrl` drives the 8-digit 7-segment display, `led_ctrl` drives the player LEDs, and `rlgl_top` ties the blocks together.
@@ -33,7 +35,7 @@ flowchart LR
 
 All 8 scenarios pass with self-checking assertions. Final simulation message: `ALL TESTS COMPLETED SUCCESSFULLY`.
 
-| Scenario | What It Verifies |
+| Scenario | What it drives |
 | --- | --- |
 | 1 | Reset and initial state: FSM in IDLE, iter_count = 0, all players ST_ACTIVE, distances zero, winner_exists and all_eliminated low. |
 | 2 | One full iteration, no player action: start press goes through LOAD then GREEN, timer loads and counts down, returns to IDLE on timer_done. |
@@ -43,6 +45,8 @@ All 8 scenarios pass with self-checking assertions. Final simulation message: `A
 | 6 | All players eliminated: all switches UP in IDLE, everyone eliminated, all_eliminated asserts, GAME_OVER. |
 | 7 | Ten iterations, no winner: ten start presses, no movement. After the tenth timer expires, FSM sees MAX_ITERATIONS and enters GAME_OVER. |
 | 8 | Partial elimination, continued play: some eliminated, survivors keep accumulating. Eliminated players stay eliminated. |
+
+Assertions check the LED vector, which is the only output a player sees. Internal state is visible on the waveform but not asserted.
 
 **Synthesis & Timing Results**
 
